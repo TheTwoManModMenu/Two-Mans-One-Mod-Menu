@@ -3773,11 +3773,6 @@ namespace GRAPHICS
 	static void _0xD2209BE128B5418C(char* graphicsName) { invoke<Void>(0xD2209BE128B5418C, graphicsName); } // 0xD2209BE128B5418C
 }
 
-namespace Features
-{
-	static void set_player_rp(int amount);
-}
-
 namespace STATS
 {
 	static Any STAT_CLEAR_SLOT_FOR_RELOAD(int statSlot) { return invoke<Any>(0xEB0A72181D4AA4AD, statSlot); } // 0xEB0A72181D4AA4AD 0x84BDD475

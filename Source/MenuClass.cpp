@@ -365,42 +365,7 @@ void Menu::TeleportOption(char* option, float x, float y, float z) {
 		Entity handle = PLAYER::PLAYER_PED_ID();
 		if (PED::IS_PED_IN_ANY_VEHICLE(PLAYER::PLAYER_PED_ID(), false))
 			handle = PED::GET_VEHICLE_PED_IS_USING(PLAYER::PLAYER_PED_ID());
-		if (x == 666.6f && y == 666.6f && z == 666.6f) {
-			Vector3 Coordinates;
-			bool BlipFound = false;
-			// search for marker blip
-			int BlipIterator = UI::_GET_BLIP_INFO_ID_ITERATOR();
-			for (Blip I = UI::GET_FIRST_BLIP_INFO_ID(BlipIterator); UI::DOES_BLIP_EXIST(I) != 0; I = UI::GET_NEXT_BLIP_INFO_ID(BlipIterator)) {
-				if (UI::GET_BLIP_INFO_ID_TYPE(I) == 4) {
-					Coordinates = UI::GET_BLIP_INFO_ID_COORD(I);
-					BlipFound = true;
-					break;
-				}
-			}
-			if (BlipFound) {
-				// load needed map region and check height levels for ground existence
-				bool GroundFound = false;
-				static float GroundCheckHeight[] = { 100.0,150.0,50.0,0.0,200.0,250.0,300.0,350.0,400.0,
-					450.0,500.0,550.0,600.0,650.0,700.0,750.0,800.0 };
-				for (int I = 0; I< sizeof(GroundCheckHeight) / sizeof(float); I++) {
-					ENTITY::SET_ENTITY_COORDS_NO_OFFSET(handle, Coordinates.x, Coordinates.y, GroundCheckHeight[I], 0, 0, 1);
-					WAIT(100);
-					if (GAMEPLAY::GET_GROUND_Z_FOR_3D_COORD(Coordinates.x, Coordinates.y, GroundCheckHeight[I], &Coordinates.z, 0)) {
-						GroundFound = true;
-						Coordinates.z += 3.0;
-						break;
-					}
-				}
-				// if ground not found then set Z in air and give player a parachute
-				if (!GroundFound) {
-					Coordinates.z = 1000.0;
-					WEAPON::GIVE_DELAYED_WEAPON_TO_PED(PLAYER::PLAYER_PED_ID(), 0xFBAB5776, 1, 0);
-				}
-			}
-			else {}
-		}
-		else
-			ENTITY::SET_ENTITY_COORDS_NO_OFFSET(handle, x, y, z, false, false, false);
+		ENTITY::SET_ENTITY_COORDS_NO_OFFSET(handle, x, y, z, false, false, false);
 	}
 }
 
