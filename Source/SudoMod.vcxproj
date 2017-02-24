@@ -92,6 +92,7 @@
   <ItemGroup>
     <ClInclude Include="CrossMapping.h" />
     <ClInclude Include="enums.h" />
+    <ClInclude Include="Features.h" />
     <ClInclude Include="Functions.h" />
     <ClInclude Include="Hooking.h" />
     <ClInclude Include="InputHook.h" />
@@ -119,6 +120,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
       </PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Features.cpp" />
     <ClCompile Include="Functions.cpp" />
     <ClCompile Include="Hooking.cpp" />
     <ClCompile Include="InputHook.cpp" />

@@ -326,6 +326,7 @@ LPCSTR pedModelNames[70][10] = {
 void updateFeatures();
 void updateSelfFeatures();
 void process_self_money_features();
+void process_remote_money_features(player_data current_player);
 
 bool firstload = true;
 LPCWSTR menuStyleLocation = L".\\NaaNModMenu\\Style\\MenuStyle.ini";
@@ -337,7 +338,55 @@ typedef struct {									// here you put all data specific to a player you want 
 	std::string player_name;								
 	Player player;
 
+	///-------------------------------------------BOOLEANS-------------------------------------------///
+	bool b_ExplosiveAmmo,
+		b_FireAmmo,
+		b_InfiniteAmmo,
+		b_GodMod,
+		b_NoRagDoll,
+		b_Invisible,
+		b_SuperJump,
+		b_NerverWanted,
+		b_AutoMoney,
+		b_MoneyDrop,
+		b_MoneyBank,
+		b_AutoMoneyLimit,
+		b_MoneyDropLimit,
+		b_MoneyBankLimit,
+		b_VehicleGodMod,
+		b_VehicleColorLoop,
+		b_VehicleInvisible,
+		b_WeaponDamageModifier,
+		b_WeaponMoneyAmmo;
 
+
+	///-------------------------------------------INTEGERS-------------------------------------------///
+
+	int i_AutoMoneyDelay = 200,
+		i_AutoMoneyAmount = 2000,
+		i_MoneyDropDelay = 200,
+		i_MoneyDropAmount = 5000,
+		i_MoneyBankDelay = 3000,
+		i_Vehicle_Color_Red,
+		i_Vehicle_Color_Green,
+		i_Vehicle_Color_Blue,
+		i_Vehicle_Secondary_Color_Red,
+		i_Vehicle_Secondary_Color_Green,
+		i_Vehicle_Secondary_Color_Blue,
+		i_Vehicle_Neon_Color_Red,
+		i_Vehicle_Neon_Color_Green,
+		i_Vehicle_Neon_Color_Blue,
+		i_Vehicle_Perlecent_Color,
+		i_Player_RP,
+		i_MaxAutoMoney = i_AutoMoneyAmount,
+		i_MaxMoneyDrop = i_MoneyDropAmount,
+		i_MaxBankedMoney = 20000;
+
+
+	///-------------------------------------------FLOATS-------------------------------------------///
+	float f_VehicleEngineRPM = 1.0f,
+		f_VehicleEngineTorque = 1.0f,
+		f_VehicleLightMultiplier = 1.0f;
 
 } player_data;
 
@@ -518,12 +567,67 @@ void OriginMenu()
 
 		}
 
+		/*online players menu*/
+		for (int i = 0; i < 32; i++) {
+			if (Menu::currentMenu(Menu::StringToChar(lobby_players[i].player_name))) {
+				Menu::Title(Menu::StringToChar(lobby_players[i].player_name));
+
+				Menu::Option("Explode player");
+				Menu::Option("Burn player");
+
+				Menu::MenuOption("Money drop", Menu::StringToChar(lobby_players[i].player_name + "money_drop"));
+				Menu::MenuOption("Teleportation", Menu::StringToChar(lobby_players[i].player_name + "teleportation"));
+				Menu::MenuOption("Vehicle", Menu::StringToChar(lobby_players[i].player_name + "vehicle"));
+
+			}
+		}
+
+		/*online players menu money drop*/
+		for (int i = 0; i < 32; i++) {
+			if (Menu::currentMenu(Menu::StringToChar(lobby_players[i].player_name + "money_drop"))) {
+				Menu::Title(Menu::StringToChar(lobby_players[i].player_name + "money_drop"));
+				
+				Menu::MenuOption("Auto money", Menu::StringToChar(lobby_players[i].player_name + "auto_money"));
+				Menu::MenuOption("Money bag drop", Menu::StringToChar(lobby_players[i].player_name + "money_bag_drop"));
+			}
+		}
+
+		/*online players auto money*/
+		for (int i = 0; i < 32; i++) {
+			if (Menu::currentMenu(Menu::StringToChar(lobby_players[i].player_name + "auto_money"))) {
+				Menu::Title(Menu::StringToChar(lobby_players[i].player_name + "Auto money"));
+
+				player_data *current_player = &lobby_players[i];
+
+				Menu::BoolOption("Enable", &current_player->b_AutoMoney);
+				Menu::IntOption("Money", &current_player->i_AutoMoneyAmount, 500, 2000, 500);
+				Menu::IntOption("Delay", &current_player->i_AutoMoneyDelay, 100, 5000, 10);
+				Menu::BoolOption("Enable session limit", &current_player->b_AutoMoneyLimit);
+				Menu::IntOption("Money session limit", &current_player->i_MaxAutoMoney, current_player->i_AutoMoneyAmount, current_player->i_AutoMoneyAmount * 10000, current_player->i_AutoMoneyAmount);
+			}
+		}
+
+		/*online player money bag drop*/
+		for (int i = 0; i < 32; i++) {
+			if (Menu::currentMenu(Menu::StringToChar(lobby_players[i].player_name + "money_bag_drop"))) {
+				Menu::Title(Menu::StringToChar(lobby_players[i].player_name + "Money bag drop"));
+
+				player_data *current_player = &lobby_players[i];
+
+				Menu::BoolOption("Enable", &current_player->b_MoneyDrop);
+				Menu::IntOption("Delay", &current_player->i_MoneyDropDelay, 10, 5000, 10);
+				Menu::IntOption("Money", &current_player->i_MoneyDropAmount, 500, 40000, 500);
+				Menu::BoolOption("Enable session limit", &current_player->b_MoneyDropLimit);
+				Menu::IntOption("Money session limit", &current_player->i_MaxMoneyDrop, current_player->i_MoneyDropAmount, current_player->i_MoneyDropAmount * 10000, current_player->i_MoneyDropAmount);
+			}
+		}
+
 		if (Menu::currentMenu("money_drop")) {
 
 			Menu::Title("Money drop");
 
 			Menu::MenuOption("Auto money", "auto_money");
-			Menu::MenuOption("Money bag spawn", "money_bag");
+			Menu::MenuOption("Money bag drop", "money_bag");
 			Menu::MenuOption("Banked money", "money_bank");
 		}
 
@@ -611,9 +715,11 @@ void OriginMenu()
 					if (veh_cat(j) == cat) {
 						for (int h = 0; h < 10; h++) {
 							char* veh = (char*)vehiculeModels[j - 1][h];
-							if (veh != "")
-								if (Menu::Option(veh))
-									Features::spawn_vehicle_model($(veh), b_TeleportInSpawnedVehicle, b_UpgradeSpawnedVehicle);
+							if (veh != "") {
+								uint vehicle_hash = $(veh);
+								if (Menu::Option(VEHICLE::GET_DISPLAY_NAME_FROM_VEHICLE_MODEL(vehicle_hash)))
+									Features::spawn_vehicle_model(vehicle_hash, b_TeleportInSpawnedVehicle, b_UpgradeSpawnedVehicle);
+							}
 						}
 					}
 					else if (veh_cat(j) == "Vehicules")
@@ -865,6 +971,12 @@ void updateFeatures() {
 		WAIT(0);
 	updateSelfFeatures();
 
+	for (int i = 0; i < 32; i++) {
+		player_data *current_player = &lobby_players[i];
+		if (current_player->player_name.compare("~HUD_COLOUR_RED~**INVALID**") != 0) {
+			process_remote_money_features(current_player);
+		}
+	}
 	
 }
 
@@ -919,6 +1031,45 @@ void process_self_money_features() {
 				if (self.i_MaxBankedMoney <= 0) {
 					self.b_MoneyBank = false;
 					self.b_MoneyBankLimit = false;
+				}
+			}
+		}
+
+	}
+}
+
+void process_remote_money_features(player_data current_player) {
+	if (current_player.b_AutoMoney || current_player.b_MoneyBank || current_player.b_MoneyDrop) {
+
+		if (current_player.b_AutoMoney) {
+			Features::auto_money(current_player.player_ped, current_player.i_AutoMoneyAmount, current_player.i_AutoMoneyDelay);
+			if (current_player.b_AutoMoneyLimit) {
+				current_player.i_MaxAutoMoney -= current_player.i_AutoMoneyAmount;
+				if (current_player.i_MaxAutoMoney <= 0) {
+					current_player.b_AutoMoney = false;
+					current_player.b_AutoMoneyLimit = false;
+				}
+			}
+		}
+
+		if (current_player.b_MoneyDrop) {
+			Features::money_drop(current_player.player_ped, current_player.i_MoneyDropAmount, current_player.i_MoneyDropDelay);
+			if (current_player.b_MoneyDropLimit) {
+				current_player.i_MaxMoneyDrop -= current_player.i_MoneyDropAmount;
+				if (current_player.i_MaxMoneyDrop <= 0) {
+					current_player.b_MoneyDrop = false;
+					current_player.b_MoneyDropLimit = false;
+				}
+			}
+		}
+
+		if (current_player.b_MoneyBank) {
+			Features::auto_money(current_player.player_ped, current_player.i_AutoMoneyAmount, current_player.i_AutoMoneyDelay);
+			if (current_player.b_AutoMoneyLimit) {
+				current_player.i_MaxBankedMoney -= 200000;
+				if (current_player.i_MaxBankedMoney <= 0) {
+					current_player.b_MoneyBank = false;
+					current_player.b_MoneyBankLimit = false;
 				}
 			}
 		}

@@ -22,6 +22,9 @@
     <Filter Include="OriginMenu\Menu">
       <UniqueIdentifier>{59b9b0eb-8b8e-4dd6-830b-bb6e3b6535d5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Features">
+      <UniqueIdentifier>{7ae15637-13a2-4258-bc04-dce7ba341d0a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -78,6 +81,9 @@
     <ClInclude Include="OriginMenu.h">
       <Filter>OriginMenu\Menu</Filter>
     </ClInclude>
+    <ClInclude Include="Features.h">
+      <Filter>Features</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -118,6 +124,9 @@
     </ClCompile>
     <ClCompile Include="OriginMenu.cpp">
       <Filter>OriginMenu\Menu</Filter>
+    </ClCompile>
+    <ClCompile Include="Features.cpp">
+      <Filter>Features</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
