@@ -323,7 +323,6 @@ LPCSTR pedModelNames[70][10] = {
 	{ "BENNY", "G", "VAGSPEAK", "VAGFUN", "BOATSTAFF", "FEMBOATSTAFF", "", "", "", "" }
 };
 
-
 typedef struct {									// here you put all data specific to a player you want to save, for exemple: bool godMod	
 	///-------------------------------------------BASIC INFO-------------------------------------------///
 	Ped player_ped;	
@@ -383,67 +382,6 @@ typedef struct {									// here you put all data specific to a player you want 
 
 } player_data;
 
-typedef struct {									// here you put all data specific to our player you want to save, for exemple: bool godMod	
-	///-------------------------------------------BASIC INFO-------------------------------------------///
-	Ped player_ped;
-	Player player;
-	int player_index;
-	char* player_name;
-
-	///-------------------------------------------BOOLEANS-------------------------------------------///
-	bool b_ExplosiveAmmo,
-		b_FireAmmo,
-		b_InfiniteAmmo,
-		b_GodMod,
-		b_NoRagDoll,
-		b_Invisible,
-		b_SuperJump,
-		b_NerverWanted,
-		b_AutoMoney,
-		b_MoneyDrop,
-		b_MoneyBank,
-		b_AutoMoneyLimit,
-		b_MoneyDropLimit,
-		b_MoneyBankLimit,
-		b_VehicleGodMod, 
-		b_VehicleColorLoop,
-		b_VehicleInvisible,
-		b_WeaponDamageModifier,
-		b_WeaponMoneyAmmo;
-
-
-	///-------------------------------------------INTEGERS-------------------------------------------///
-
-	int i_AutoMoneyDelay = 200,
-		i_AutoMoneyAmount = 2000,
-		i_MoneyDropDelay = 200,
-		i_MoneyDropAmount = 5000,
-		i_MoneyBankDelay = 3000,
-		i_Vehicle_Color_Red,
-		i_Vehicle_Color_Green,
-		i_Vehicle_Color_Blue,
-		i_Vehicle_Secondary_Color_Red,
-		i_Vehicle_Secondary_Color_Green,
-		i_Vehicle_Secondary_Color_Blue,
-		i_Vehicle_Neon_Color_Red,
-		i_Vehicle_Neon_Color_Green,
-		i_Vehicle_Neon_Color_Blue,
-		i_Vehicle_Perlecent_Color,
-		i_Player_RP,
-		i_MaxAutoMoney = i_AutoMoneyAmount,
-		i_MaxMoneyDrop= i_MoneyDropAmount,
-		i_MaxBankedMoney = 20000;
-
-
-	///-------------------------------------------FLOATS-------------------------------------------///
-	float f_VehicleEngineRPM = 1.0f,
-		f_VehicleEngineTorque = 1.0f,
-		f_VehicleLightMultiplier = 1.0f;
-		
-
-
-} self_player_data;
-
 #pragma region General-Data
 
 bool b_TeleportInSpawnedVehicle;
@@ -456,11 +394,12 @@ void updateFeatures();
 void updateSelfFeatures();
 void process_self_money_features();
 void process_remote_money_features(player_data *current_player);
+int checkSelfPlayerIndex();
 
 bool firstload = true;
 LPCWSTR menuStyleLocation = L".\\NaaNModMenu\\Style\\MenuStyle.ini";
 
-self_player_data self;		
+player_data *self;		
 player_data lobby_players[32]; // array for every players in lobby
 
 void OriginMenu() 
@@ -476,10 +415,12 @@ void OriginMenu()
 
 	Menu::checkKeys();
 
-	self.player = PLAYER::PLAYER_ID();
-	self.player_index = PLAYER::GET_PLAYER_INDEX();
-	self.player_ped = PLAYER::PLAYER_PED_ID();
-	self.player_name = PLAYER::GET_PLAYER_NAME(self.player);
+	self = &lobby_players[checkSelfPlayerIndex()];
+
+	self->player = PLAYER::PLAYER_ID();
+	self->player_index = PLAYER::GET_PLAYER_INDEX();
+	self->player_ped = PLAYER::PLAYER_PED_ID();
+	self->player_name = PLAYER::GET_PLAYER_NAME(self->player);
 
 	if (Menu::open()) {
 		if (Menu::currentMenu("main")) {
@@ -500,13 +441,13 @@ void OriginMenu()
 		if (Menu::currentMenu("weapon")) {
 			Menu::Title("Weapon");
 			if (Menu::Option("Give every weapon"))
-				Features::give_weap(self.player_ped);
-			Menu::BoolOption("Explosive bullets", &self.b_ExplosiveAmmo);
-			Menu::BoolOption("Fire bullets", &self.b_FireAmmo);
-			Menu::BoolOption("Infinte ammo", &self.b_InfiniteAmmo);
-			Menu::BoolOption("Money gun", &self.b_WeaponMoneyAmmo);
-			if (Menu::BoolOption("One shot kill ammo", &self.b_WeaponDamageModifier))
-				Features::weapon_damage_modifier(self.player_ped, self.b_WeaponDamageModifier);
+				Features::give_weap(self->player_ped);
+			Menu::BoolOption("Explosive bullets", &self->b_ExplosiveAmmo);
+			Menu::BoolOption("Fire bullets", &self->b_FireAmmo);
+			Menu::BoolOption("Infinte ammo", &self->b_InfiniteAmmo);
+			Menu::BoolOption("Money gun", &self->b_WeaponMoneyAmmo);
+			if (Menu::BoolOption("One shot kill ammo", &self->b_WeaponDamageModifier))
+				Features::weapon_damage_modifier(self->player_ped, self->b_WeaponDamageModifier);
 		}
 
 		if (Menu::currentMenu("self")) {
@@ -515,14 +456,14 @@ void OriginMenu()
 			Menu::Title("Self");
 
 			Menu::MenuOption("Skin", "skin");
-			if (Menu::BoolOption("God mod", &self.b_GodMod))
-				Features::toggle_GodMod(self.b_GodMod, self.player);
-			if (Menu::BoolOption("Invisibility", &self.b_Invisible))
-				Features::toggle_Invisibility(self.b_Invisible, self.player_ped);
-			Menu::BoolOption("Super jump", &self.b_SuperJump);
-			Menu::BoolOption("Never wanted", &self.b_NerverWanted);
-			if (Menu::BoolOption("No ragdoll", &self.b_NoRagDoll))
-				Features::no_ragdoll(self.b_NoRagDoll, self.player, self.player_ped);
+			if (Menu::BoolOption("God mod", &self->b_GodMod))
+				Features::toggle_GodMod(self->b_GodMod, self->player);
+			if (Menu::BoolOption("Invisibility", &self->b_Invisible))
+				Features::toggle_Invisibility(self->b_Invisible, self->player_ped);
+			Menu::BoolOption("Super jump", &self->b_SuperJump);
+			Menu::BoolOption("Never wanted", &self->b_NerverWanted);
+			if (Menu::BoolOption("No ragdoll", &self->b_NoRagDoll))
+				Features::no_ragdoll(self->b_NoRagDoll, self->player, self->player_ped);
 		}
 
 		if (Menu::currentMenu("skin")) {
@@ -560,8 +501,11 @@ void OriginMenu()
 				lobby_players[i].player_name = PLAYER::GET_PLAYER_NAME(lobby_players[i].player);
 				lobby_players[i].player_ped = PLAYER::GET_PLAYER_PED(lobby_players[i].player);
 
-				if (lobby_players[i].player_name.compare("~HUD_COLOUR_RED~**INVALID**") != 0)
+				if (lobby_players[i].player_name.compare("~HUD_COLOUR_RED~**INVALID**") != 0) {
 					Menu::MenuOption(Menu::StringToChar(lobby_players[i].player_name), Menu::StringToChar(lobby_players[i].player_name));
+					Log::Msg(Menu::StringToChar(lobby_players[i].player_name));
+				}
+					
 			}
 
 
@@ -574,6 +518,8 @@ void OriginMenu()
 
 				Menu::Option("Explode player");
 				Menu::Option("Burn player");
+				Menu::Option("Give player all weapons");
+				Menu::Option("Remove player all weapons");
 
 				Menu::MenuOption("Money drop", Menu::StringToChar(lobby_players[i].player_name + "money_drop"));
 				Menu::MenuOption("Teleportation", Menu::StringToChar(lobby_players[i].player_name + "teleportation"));
@@ -634,22 +580,22 @@ void OriginMenu()
 		if (Menu::currentMenu("auto_money")) {
 
 			Menu::Title("Auto money");
-			Menu::BoolOption("Enable", &self.b_AutoMoney);
-			Menu::IntOption("Money", &self.i_AutoMoneyAmount, 500, 2000, 500);
-			Menu::IntOption("Delay", &self.i_AutoMoneyDelay, 100, 5000, 10);
-			Menu::BoolOption("Enable session limit", &self.b_AutoMoneyLimit);
-			Menu::IntOption("Money session limit", &self.i_MaxAutoMoney, self.i_AutoMoneyAmount, self.i_AutoMoneyAmount * 10000, self.i_AutoMoneyAmount);
+			Menu::BoolOption("Enable", &self->b_AutoMoney);
+			Menu::IntOption("Money", &self->i_AutoMoneyAmount, 500, 2000, 500);
+			Menu::IntOption("Delay", &self->i_AutoMoneyDelay, 100, 5000, 10);
+			Menu::BoolOption("Enable session limit", &self->b_AutoMoneyLimit);
+			Menu::IntOption("Money session limit", &self->i_MaxAutoMoney, self->i_AutoMoneyAmount, self->i_AutoMoneyAmount * 10000, self->i_AutoMoneyAmount);
 		}
 
 		if (Menu::currentMenu("money_bag")) {
 
 			Menu::Title("Money bag drop");
 
-			Menu::BoolOption("Enable", &self.b_MoneyDrop);
-			Menu::IntOption("Delay", &self.i_MoneyDropDelay, 10, 5000, 10);
-			Menu::IntOption("Money", &self.i_MoneyDropAmount, 500, 40000, 500);
-			Menu::BoolOption("Enable session limit", &self.b_MoneyDropLimit);
-			Menu::IntOption("Money session limit", &self.i_MaxMoneyDrop, self.i_MoneyDropAmount, self.i_MoneyDropAmount * 10000, self.i_MoneyDropAmount);
+			Menu::BoolOption("Enable", &self->b_MoneyDrop);
+			Menu::IntOption("Delay", &self->i_MoneyDropDelay, 10, 5000, 10);
+			Menu::IntOption("Money", &self->i_MoneyDropAmount, 500, 40000, 500);
+			Menu::BoolOption("Enable session limit", &self->b_MoneyDropLimit);
+			Menu::IntOption("Money session limit", &self->i_MaxMoneyDrop, self->i_MoneyDropAmount, self->i_MoneyDropAmount * 10000, self->i_MoneyDropAmount);
 		}		
 		
 		if (Menu::currentMenu("money_bank")) {
@@ -658,10 +604,10 @@ void OriginMenu()
 
 			if (Menu::Option("Give 200K banked"))
 				Features::money_bank();
-			Menu::BoolOption("Enable", &self.b_MoneyBank);
-			Menu::IntOption("Delay", &self.i_MoneyBankDelay, 10, 10000, 10);
-			Menu::BoolOption("Enable session limit", &self.b_MoneyBankLimit);
-			Menu::IntOption("Money session limit", &self.i_MaxBankedMoney, 200000, 2000000000, 200000);
+			Menu::BoolOption("Enable", &self->b_MoneyBank);
+			Menu::IntOption("Delay", &self->i_MoneyBankDelay, 10, 10000, 10);
+			Menu::BoolOption("Enable session limit", &self->b_MoneyBankLimit);
+			Menu::IntOption("Money session limit", &self->i_MaxBankedMoney, 200000, 2000000000, 200000);
 		}
 
 		if (Menu::currentMenu("vehicule")) {
@@ -670,10 +616,10 @@ void OriginMenu()
 
 			Menu::MenuOption("vehicle spawn", "veh_spawn");
 
-			if (PED::IS_PED_IN_ANY_VEHICLE(self.player_ped, 0)) {
+			if (PED::IS_PED_IN_ANY_VEHICLE(self->player_ped, 0)) {
 				Menu::MenuOption("Portable LSC", "lsc");
 				Menu::MenuOption("Multipliers", "engine_modification");
-				Vehicle player_vehicle = PED::GET_VEHICLE_PED_IS_IN(self.player_ped, 0);
+				Vehicle player_vehicle = PED::GET_VEHICLE_PED_IS_IN(self->player_ped, 0);
 				if (Menu::Option("Max upgrade"))
 					Features::Max_veh(player_vehicle);
 				if (Menu::Option("Fix vehicule"))
@@ -682,10 +628,10 @@ void OriginMenu()
 					Features::flip_veh(player_vehicle);
 				if (Menu::Option("Change plate"))
 					Features::set_plate(player_vehicle);
-				if (Menu::BoolOption("Invisible vehicule", &self.b_VehicleInvisible))
-					Features::veh_invisible(player_vehicle, self.b_VehicleInvisible);
-				Menu::BoolOption("God mod vehicule", &self.b_VehicleGodMod);
-				Menu::BoolOption("Rainbow color", &self.b_VehicleColorLoop);
+				if (Menu::BoolOption("Invisible vehicule", &self->b_VehicleInvisible))
+					Features::veh_invisible(player_vehicle, self->b_VehicleInvisible);
+				Menu::BoolOption("God mod vehicule", &self->b_VehicleGodMod);
+				Menu::BoolOption("Rainbow color", &self->b_VehicleColorLoop);
 			}
 		}
 
@@ -732,15 +678,15 @@ void OriginMenu()
 
 		if (Menu::currentMenu("engine_modification")) {
 			Menu::Title("Multipliers");
-			if (PED::IS_PED_IN_ANY_VEHICLE(self.player_ped, 0)) {
-				Vehicle player_vehicle = PED::GET_VEHICLE_PED_IS_IN(self.player_ped, 0);
-				Menu::FloatOption("Engine RPM", &self.f_VehicleEngineRPM, 1, 990, 1.000000015f);
-				Menu::FloatOption("Engine torque", &self.f_VehicleEngineTorque, 1, 990, 0.500000015f);
-				Menu::FloatOption("Light multiplier", &self.f_VehicleLightMultiplier, 1, 200, 1.0000015f);
+			if (PED::IS_PED_IN_ANY_VEHICLE(self->player_ped, 0)) {
+				Vehicle player_vehicle = PED::GET_VEHICLE_PED_IS_IN(self->player_ped, 0);
+				Menu::FloatOption("Engine RPM", &self->f_VehicleEngineRPM, 1, 990, 1.000000015f);
+				Menu::FloatOption("Engine torque", &self->f_VehicleEngineTorque, 1, 990, 0.500000015f);
+				Menu::FloatOption("Light multiplier", &self->f_VehicleLightMultiplier, 1, 200, 1.0000015f);
 				if (Menu::Option("Apply")) {
-					Features::set_engine_rpm(player_vehicle, self.f_VehicleEngineRPM);
-					Features::set_engine_torque(player_vehicle, self.f_VehicleEngineTorque);
-					Features::set_light_multiplier(player_vehicle, self.f_VehicleLightMultiplier);
+					Features::set_engine_rpm(player_vehicle, self->f_VehicleEngineRPM);
+					Features::set_engine_torque(player_vehicle, self->f_VehicleEngineTorque);
+					Features::set_light_multiplier(player_vehicle, self->f_VehicleLightMultiplier);
 				}
 			}
 			else
@@ -749,8 +695,8 @@ void OriginMenu()
 
 		if (Menu::currentMenu("lsc")) {
 			Menu::Title("Portable LSC");
-			if (PED::IS_PED_IN_ANY_VEHICLE(self.player_ped, 0)) {
-				Vehicle veh = PED::GET_VEHICLE_PED_IS_IN(self.player_ped, 0);
+			if (PED::IS_PED_IN_ANY_VEHICLE(self->player_ped, 0)) {
+				Vehicle veh = PED::GET_VEHICLE_PED_IS_IN(self->player_ped, 0);
 
 				Menu::MenuOption("Color", "veh_color");
 				Menu::CharArray("Plate type", platesTypes, &i_PlateType, sizeof(platesTypes) / sizeof(*platesTypes) - 1);
@@ -779,38 +725,38 @@ void OriginMenu()
 
 		if (Menu::currentMenu("veh_color")) {
 			Menu::Title("Color");
-			if (!PED::IS_PED_IN_ANY_VEHICLE(self.player_ped, 0)) {
+			if (!PED::IS_PED_IN_ANY_VEHICLE(self->player_ped, 0)) {
 				Menu::Option("You're not in a vehicle!");
 				return;
 			}
-			Vehicle veh = PED::GET_VEHICLE_PED_IS_USING(self.player_ped);
+			Vehicle veh = PED::GET_VEHICLE_PED_IS_USING(self->player_ped);
 
-			if (Menu::IntOption("Primary color RED", &self.i_Vehicle_Color_Red, 0, 255, 1))
-				Features::set_primary_color(veh, self.i_Vehicle_Color_Red, self.i_Vehicle_Color_Green, self.i_Vehicle_Color_Blue);
-			if (Menu::IntOption("Primary color GREEN", &self.i_Vehicle_Color_Green, 0, 255, 1))
-				Features::set_primary_color(veh, self.i_Vehicle_Color_Red, self.i_Vehicle_Color_Green, self.i_Vehicle_Color_Blue);
-			if (Menu::IntOption("Primary color BLUE", &self.i_Vehicle_Color_Blue, 0, 255, 1))
-				Features::set_primary_color(veh, self.i_Vehicle_Color_Red, self.i_Vehicle_Color_Green, self.i_Vehicle_Color_Blue);
+			if (Menu::IntOption("Primary color RED", &self->i_Vehicle_Color_Red, 0, 255, 1))
+				Features::set_primary_color(veh, self->i_Vehicle_Color_Red, self->i_Vehicle_Color_Green, self->i_Vehicle_Color_Blue);
+			if (Menu::IntOption("Primary color GREEN", &self->i_Vehicle_Color_Green, 0, 255, 1))
+				Features::set_primary_color(veh, self->i_Vehicle_Color_Red, self->i_Vehicle_Color_Green, self->i_Vehicle_Color_Blue);
+			if (Menu::IntOption("Primary color BLUE", &self->i_Vehicle_Color_Blue, 0, 255, 1))
+				Features::set_primary_color(veh, self->i_Vehicle_Color_Red, self->i_Vehicle_Color_Green, self->i_Vehicle_Color_Blue);
 			Menu::Option("");
 
-			if (Menu::IntOption("Secondary color RED", &self.i_Vehicle_Secondary_Color_Red, 0, 255, 1))
-				Features::set_secondary_color(veh, self.i_Vehicle_Secondary_Color_Red, self.i_Vehicle_Secondary_Color_Green, self.i_Vehicle_Secondary_Color_Blue);
-			if (Menu::IntOption("Secondary color GREEN", &self.i_Vehicle_Secondary_Color_Green, 0, 255, 1))
-				Features::set_secondary_color(veh, self.i_Vehicle_Secondary_Color_Red, self.i_Vehicle_Secondary_Color_Green, self.i_Vehicle_Secondary_Color_Blue);
-			if (Menu::IntOption("Secondary color BLUE", &self.i_Vehicle_Secondary_Color_Blue, 0, 255, 1))
-				Features::set_secondary_color(veh, self.i_Vehicle_Secondary_Color_Red, self.i_Vehicle_Secondary_Color_Green, self.i_Vehicle_Secondary_Color_Blue);
+			if (Menu::IntOption("Secondary color RED", &self->i_Vehicle_Secondary_Color_Red, 0, 255, 1))
+				Features::set_secondary_color(veh, self->i_Vehicle_Secondary_Color_Red, self->i_Vehicle_Secondary_Color_Green, self->i_Vehicle_Secondary_Color_Blue);
+			if (Menu::IntOption("Secondary color GREEN", &self->i_Vehicle_Secondary_Color_Green, 0, 255, 1))
+				Features::set_secondary_color(veh, self->i_Vehicle_Secondary_Color_Red, self->i_Vehicle_Secondary_Color_Green, self->i_Vehicle_Secondary_Color_Blue);
+			if (Menu::IntOption("Secondary color BLUE", &self->i_Vehicle_Secondary_Color_Blue, 0, 255, 1))
+				Features::set_secondary_color(veh, self->i_Vehicle_Secondary_Color_Red, self->i_Vehicle_Secondary_Color_Green, self->i_Vehicle_Secondary_Color_Blue);
 			Menu::Option("");
 
-			if (Menu::IntOption("Neon color RED", &self.i_Vehicle_Neon_Color_Red, 0, 255, 1))
-				Features::set_neon_color(veh, self.i_Vehicle_Neon_Color_Red, self.i_Vehicle_Neon_Color_Green, self.i_Vehicle_Neon_Color_Blue);
-			if (Menu::IntOption("Neon color GREEN", &self.i_Vehicle_Neon_Color_Green, 0, 255, 1))
-				Features::set_neon_color(veh, self.i_Vehicle_Neon_Color_Red, self.i_Vehicle_Neon_Color_Green, self.i_Vehicle_Neon_Color_Blue);
-			if (Menu::IntOption("Neon color BLUE", &self.i_Vehicle_Neon_Color_Blue, 0, 255, 1))
-				Features::set_neon_color(veh, self.i_Vehicle_Neon_Color_Red, self.i_Vehicle_Neon_Color_Green, self.i_Vehicle_Neon_Color_Blue);
+			if (Menu::IntOption("Neon color RED", &self->i_Vehicle_Neon_Color_Red, 0, 255, 1))
+				Features::set_neon_color(veh, self->i_Vehicle_Neon_Color_Red, self->i_Vehicle_Neon_Color_Green, self->i_Vehicle_Neon_Color_Blue);
+			if (Menu::IntOption("Neon color GREEN", &self->i_Vehicle_Neon_Color_Green, 0, 255, 1))
+				Features::set_neon_color(veh, self->i_Vehicle_Neon_Color_Red, self->i_Vehicle_Neon_Color_Green, self->i_Vehicle_Neon_Color_Blue);
+			if (Menu::IntOption("Neon color BLUE", &self->i_Vehicle_Neon_Color_Blue, 0, 255, 1))
+				Features::set_neon_color(veh, self->i_Vehicle_Neon_Color_Red, self->i_Vehicle_Neon_Color_Green, self->i_Vehicle_Neon_Color_Blue);
 			Menu::Option("");
 
-			if (Menu::IntOption("Perlecent color", &self.i_Vehicle_Perlecent_Color, 0, 160, 1))
-				VEHICLE::SET_VEHICLE_EXTRA_COLOURS(veh, self.i_Vehicle_Perlecent_Color, 0);
+			if (Menu::IntOption("Perlecent color", &self->i_Vehicle_Perlecent_Color, 0, 160, 1))
+				VEHICLE::SET_VEHICLE_EXTRA_COLOURS(veh, self->i_Vehicle_Perlecent_Color, 0);
 
 		}
 
@@ -906,8 +852,8 @@ void OriginMenu()
 				Features::set_player_rp(40444350);
 			if (Menu::Option("Level 999"))
 				Features::set_player_rp(47478300);
-			if (Menu::IntOption("Custom rp lvl", &self.i_Player_RP, 1, 9000000000000, 10))
-				Features::set_player_rp(self.i_Player_RP);
+			if (Menu::IntOption("Custom rp lvl", &self->i_Player_RP, 1, 9000000000000, 10))
+				Features::set_player_rp(self->i_Player_RP);
 		}
 
 		if (Menu::currentMenu("menu_settings")) {
@@ -1001,55 +947,55 @@ void updateFeatures() {
 
 void updateSelfFeatures() {
 	if (!ENTITY::IS_ENTITY_DEAD(PLAYER::PLAYER_PED_ID()) && !PLAYER::IS_PLAYER_BEING_ARRESTED(PLAYER::PLAYER_ID(), TRUE)) {
-		Features::toggle_super_jump(self.b_SuperJump, self.player);
-		Features::never_wanted(self.b_NerverWanted, self.player);
-		Features::explosive_ammo(self.player, self.b_ExplosiveAmmo);
-		Features::fire_ammo(self.player, self.b_FireAmmo);
-		Features::money_ammo(self.player_ped, self.b_WeaponMoneyAmmo);
+		Features::toggle_super_jump(self->b_SuperJump, self->player);
+		Features::never_wanted(self->b_NerverWanted, self->player);
+		Features::explosive_ammo(self->player, self->b_ExplosiveAmmo);
+		Features::fire_ammo(self->player, self->b_FireAmmo);
+		Features::money_ammo(self->player_ped, self->b_WeaponMoneyAmmo);
 
 		process_self_money_features();
 
-		if (PED::IS_PED_IN_ANY_VEHICLE(self.player_ped, 0)) {
-			Vehicle player_vehicle = PED::GET_VEHICLE_PED_IS_IN(self.player_ped, 0);
+		if (PED::IS_PED_IN_ANY_VEHICLE(self->player_ped, 0)) {
+			Vehicle player_vehicle = PED::GET_VEHICLE_PED_IS_IN(self->player_ped, 0);
 
-			Features::color_loop(player_vehicle, self.b_VehicleColorLoop);
+			Features::color_loop(player_vehicle, self->b_VehicleColorLoop);
 		}
 
 	}
 }
 
 void process_self_money_features() {
-	if (self.b_AutoMoney || self.b_MoneyBank || self.b_MoneyDrop) {
+	if (self->b_AutoMoney || self->b_MoneyBank || self->b_MoneyDrop) {
 		
-		if (self.b_AutoMoney) {
-			Features::auto_money(self.player_ped, self.i_AutoMoneyAmount, self.i_AutoMoneyDelay);
-			if (self.b_AutoMoneyLimit) {
-				self.i_MaxAutoMoney -= self.i_AutoMoneyAmount;
-				if (self.i_MaxAutoMoney <= 0) {
-					self.b_AutoMoney = false;
-					self.b_AutoMoneyLimit = false;
+		if (self->b_AutoMoney) {
+			Features::auto_money(self->player_ped, self->i_AutoMoneyAmount, self->i_AutoMoneyDelay);
+			if (self->b_AutoMoneyLimit) {
+				self->i_MaxAutoMoney -= self->i_AutoMoneyAmount;
+				if (self->i_MaxAutoMoney <= 0) {
+					self->b_AutoMoney = false;
+					self->b_AutoMoneyLimit = false;
 				}
 			}
 		}
 
-		if (self.b_MoneyDrop) {
-			Features::money_drop(self.player_ped, self.i_MoneyDropAmount, self.i_MoneyDropDelay);
-			if (self.b_MoneyDropLimit) {
-				self.i_MaxMoneyDrop -= self.i_MoneyDropAmount;
-				if (self.i_MaxMoneyDrop <= 0) {
-					self.b_MoneyDrop = false;
-					self.b_MoneyDropLimit = false;
+		if (self->b_MoneyDrop) {
+			Features::money_drop(self->player_ped, self->i_MoneyDropAmount, self->i_MoneyDropDelay);
+			if (self->b_MoneyDropLimit) {
+				self->i_MaxMoneyDrop -= self->i_MoneyDropAmount;
+				if (self->i_MaxMoneyDrop <= 0) {
+					self->b_MoneyDrop = false;
+					self->b_MoneyDropLimit = false;
 				}
 			}
 		}
 
-		if (self.b_MoneyBank) {
-			Features::auto_money(self.player_ped, self.i_AutoMoneyAmount, self.i_AutoMoneyDelay);
-			if (self.b_AutoMoneyLimit) {
-				self.i_MaxBankedMoney -= 200000;
-				if (self.i_MaxBankedMoney <= 0) {
-					self.b_MoneyBank = false;
-					self.b_MoneyBankLimit = false;
+		if (self->b_MoneyBank) {
+			Features::auto_money(self->player_ped, self->i_AutoMoneyAmount, self->i_AutoMoneyDelay);
+			if (self->b_AutoMoneyLimit) {
+				self->i_MaxBankedMoney -= 200000;
+				if (self->i_MaxBankedMoney <= 0) {
+					self->b_MoneyBank = false;
+					self->b_MoneyBankLimit = false;
 				}
 			}
 		}
@@ -1093,5 +1039,12 @@ void process_remote_money_features(player_data *current_player) {
 			}
 		}
 
+	}
+}
+
+int checkSelfPlayerIndex() {
+	for (int i = 0; i < 32; i++) {
+		if (PLAYER::PLAYER_ID() == PLAYER::INT_TO_PLAYERINDEX(i))
+			return i;
 	}
 }
