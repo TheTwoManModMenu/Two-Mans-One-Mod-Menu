@@ -17,6 +17,10 @@ static LPCSTR weaponNames[] = {
 int rgb_rainbow_red = 255, rgb_rainbow_green, rgb_rainbow_blue;
 int MoneyDropDelay = GetTickCount(), autoMoney_Delay = GetTickCount();
 
+void Features::apply_vehicle_mod(Vehicle veh, int modtype, int modindex) {
+	VEHICLE::SET_VEHICLE_MOD(veh, modtype, modindex, true);
+}
+
 void Features::money_bank() {
 	NETWORKCASH::NETWORK_EARN_FROM_ROCKSTAR(200000);
 }

@@ -323,13 +323,6 @@ LPCSTR pedModelNames[70][10] = {
 	{ "BENNY", "G", "VAGSPEAK", "VAGFUN", "BOATSTAFF", "FEMBOATSTAFF", "", "", "", "" }
 };
 
-void updateFeatures();
-void updateSelfFeatures();
-void process_self_money_features();
-void process_remote_money_features(player_data current_player);
-
-bool firstload = true;
-LPCWSTR menuStyleLocation = L".\\NaaNModMenu\\Style\\MenuStyle.ini";
 
 typedef struct {									// here you put all data specific to a player you want to save, for exemple: bool godMod	
 	///-------------------------------------------BASIC INFO-------------------------------------------///
@@ -459,6 +452,13 @@ int i_PlateType;
 
 #pragma endregion
 
+void updateFeatures();
+void updateSelfFeatures();
+void process_self_money_features();
+void process_remote_money_features(player_data *current_player);
+
+bool firstload = true;
+LPCWSTR menuStyleLocation = L".\\NaaNModMenu\\Style\\MenuStyle.ini";
 
 self_player_data self;		
 player_data lobby_players[32]; // array for every players in lobby
@@ -750,9 +750,28 @@ void OriginMenu()
 		if (Menu::currentMenu("lsc")) {
 			Menu::Title("Portable LSC");
 			if (PED::IS_PED_IN_ANY_VEHICLE(self.player_ped, 0)) {
+				Vehicle veh = PED::GET_VEHICLE_PED_IS_IN(self.player_ped, 0);
+
 				Menu::MenuOption("Color", "veh_color");
 				Menu::CharArray("Plate type", platesTypes, &i_PlateType, sizeof(platesTypes) / sizeof(*platesTypes) - 1);
-				Features::set_plate_type(PED::GET_VEHICLE_PED_IS_IN(self.player_ped, 0), i_PlateType);
+				Features::set_plate_type(veh, i_PlateType);
+
+				int spolierIndex, spolier = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 0);
+				if (spolier > 0)
+					if (Menu::IntOption("Spolier", &spolierIndex, 0, spolier))
+						Features::apply_vehicle_mod(veh, 0, spolierIndex);
+
+				int frontBumperIndex, frontBumper = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 1);
+				if (frontBumper > 0)
+					if (Menu::IntOption("Front bumper", &frontBumperIndex, 0, frontBumper))
+						Features::apply_vehicle_mod(veh, 0, frontBumperIndex);
+
+				int rearBumperIndex, rearBumper = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 2);
+				if (rearBumper> 0)
+					if (Menu::IntOption("Rear bumper", &rearBumperIndex, 0, rearBumper))
+						Features::apply_vehicle_mod(veh, 0, rearBumperIndex);
+				
+
 			}
 			else
 				Menu::Option("You're not in a vehicle!");
@@ -1038,38 +1057,38 @@ void process_self_money_features() {
 	}
 }
 
-void process_remote_money_features(player_data current_player) {
-	if (current_player.b_AutoMoney || current_player.b_MoneyBank || current_player.b_MoneyDrop) {
+void process_remote_money_features(player_data *current_player) {
+	if (current_player->b_AutoMoney || current_player->b_MoneyBank || current_player->b_MoneyDrop) {
 
-		if (current_player.b_AutoMoney) {
-			Features::auto_money(current_player.player_ped, current_player.i_AutoMoneyAmount, current_player.i_AutoMoneyDelay);
-			if (current_player.b_AutoMoneyLimit) {
-				current_player.i_MaxAutoMoney -= current_player.i_AutoMoneyAmount;
-				if (current_player.i_MaxAutoMoney <= 0) {
-					current_player.b_AutoMoney = false;
-					current_player.b_AutoMoneyLimit = false;
+		if (current_player->b_AutoMoney) {
+			Features::auto_money(current_player->player_ped, current_player->i_AutoMoneyAmount, current_player->i_AutoMoneyDelay);
+			if (current_player->b_AutoMoneyLimit) {
+				current_player->i_MaxAutoMoney -= current_player->i_AutoMoneyAmount;
+				if (current_player->i_MaxAutoMoney <= 0) {
+					current_player->b_AutoMoney = false;
+					current_player->b_AutoMoneyLimit = false;
 				}
 			}
 		}
 
-		if (current_player.b_MoneyDrop) {
-			Features::money_drop(current_player.player_ped, current_player.i_MoneyDropAmount, current_player.i_MoneyDropDelay);
-			if (current_player.b_MoneyDropLimit) {
-				current_player.i_MaxMoneyDrop -= current_player.i_MoneyDropAmount;
-				if (current_player.i_MaxMoneyDrop <= 0) {
-					current_player.b_MoneyDrop = false;
-					current_player.b_MoneyDropLimit = false;
+		if (current_player->b_MoneyDrop) {
+			Features::money_drop(current_player->player_ped, current_player->i_MoneyDropAmount, current_player->i_MoneyDropDelay);
+			if (current_player->b_MoneyDropLimit) {
+				current_player->i_MaxMoneyDrop -= current_player->i_MoneyDropAmount;
+				if (current_player->i_MaxMoneyDrop <= 0) {
+					current_player->b_MoneyDrop = false;
+					current_player->b_MoneyDropLimit = false;
 				}
 			}
 		}
 
-		if (current_player.b_MoneyBank) {
-			Features::auto_money(current_player.player_ped, current_player.i_AutoMoneyAmount, current_player.i_AutoMoneyDelay);
-			if (current_player.b_AutoMoneyLimit) {
-				current_player.i_MaxBankedMoney -= 200000;
-				if (current_player.i_MaxBankedMoney <= 0) {
-					current_player.b_MoneyBank = false;
-					current_player.b_MoneyBankLimit = false;
+		if (current_player->b_MoneyBank) {
+			Features::auto_money(current_player->player_ped, current_player->i_AutoMoneyAmount, current_player->i_AutoMoneyDelay);
+			if (current_player->b_AutoMoneyLimit) {
+				current_player->i_MaxBankedMoney -= 200000;
+				if (current_player->i_MaxBankedMoney <= 0) {
+					current_player->b_MoneyBank = false;
+					current_player->b_MoneyBankLimit = false;
 				}
 			}
 		}
