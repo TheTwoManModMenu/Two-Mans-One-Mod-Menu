@@ -332,10 +332,10 @@ LPCWSTR menuStyleLocation = L".\\NaaNModMenu\\Style\\MenuStyle.ini";
 
 typedef struct {									// here you put all data specific to a player you want to save, for exemple: bool godMod	
 	///-------------------------------------------BASIC INFO-------------------------------------------///
-	Ped player_ped;									// here is the basic you need to affect a specific player.
-	Player player;
+	Ped player_ped;	
 	int player_index;
-	char* player_name;
+	std::string player_name;								
+	Player player;
 
 
 
@@ -412,7 +412,7 @@ int i_PlateType;
 
 
 self_player_data self;		
-player_data lobby_players[]; // array for every players in lobby
+player_data lobby_players[32]; // array for every players in lobby
 
 void OriginMenu() 
 {
@@ -504,6 +504,18 @@ void OriginMenu()
 
 		if (Menu::currentMenu("online")) {
 			Menu::Title("Online");
+
+			for (int i = 0; i < 32; i++) {
+				lobby_players[i].player = PLAYER::INT_TO_PLAYERINDEX(i);
+				lobby_players[i].player_index = i;
+				lobby_players[i].player_name = PLAYER::GET_PLAYER_NAME(lobby_players[i].player);
+				lobby_players[i].player_ped = PLAYER::GET_PLAYER_PED(lobby_players[i].player);
+
+				if (lobby_players[i].player_name.compare("~HUD_COLOUR_RED~**INVALID**") != 0)
+					Menu::MenuOption(Menu::StringToChar(lobby_players[i].player_name), Menu::StringToChar(lobby_players[i].player_name));
+			}
+
+
 		}
 
 		if (Menu::currentMenu("money_drop")) {
