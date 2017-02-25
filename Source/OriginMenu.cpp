@@ -327,7 +327,7 @@ typedef struct {									// here you put all data specific to a player you want 
 	///-------------------------------------------BASIC INFO-------------------------------------------///
 	Ped player_ped;	
 	int player_index;
-	std::string player_name;								
+	char* player_name;								
 	Player player;
 
 	///-------------------------------------------BOOLEANS-------------------------------------------///
@@ -387,6 +387,7 @@ typedef struct {									// here you put all data specific to a player you want 
 bool b_TeleportInSpawnedVehicle;
 bool b_UpgradeSpawnedVehicle;
 int i_PlateType;
+int modindex[24];
 
 #pragma endregion
 
@@ -414,11 +415,18 @@ void OriginMenu()
 	}
 
 	Menu::checkKeys();
+	
+	/*upadating players in session*/
+	for (int i = 0; i < 32; i++) {
+		lobby_players[i].player = PLAYER::INT_TO_PLAYERINDEX(i);
+		lobby_players[i].player_index = i;
+		lobby_players[i].player_name = PLAYER::GET_PLAYER_NAME(lobby_players[i].player);
+		lobby_players[i].player_ped = PLAYER::GET_PLAYER_PED(lobby_players[i].player);
+	}
 
 	self = &lobby_players[checkSelfPlayerIndex()];
 
 	self->player = PLAYER::PLAYER_ID();
-	self->player_index = PLAYER::GET_PLAYER_INDEX();
 	self->player_ped = PLAYER::PLAYER_PED_ID();
 	self->player_name = PLAYER::GET_PLAYER_NAME(self->player);
 
@@ -496,52 +504,45 @@ void OriginMenu()
 			Menu::Title("Online");
 
 			for (int i = 0; i < 32; i++) {
-				lobby_players[i].player = PLAYER::INT_TO_PLAYERINDEX(i);
-				lobby_players[i].player_index = i;
-				lobby_players[i].player_name = PLAYER::GET_PLAYER_NAME(lobby_players[i].player);
-				lobby_players[i].player_ped = PLAYER::GET_PLAYER_PED(lobby_players[i].player);
-
-				if (lobby_players[i].player_name.compare("~HUD_COLOUR_RED~**INVALID**") != 0) {
-					Menu::MenuOption(Menu::StringToChar(lobby_players[i].player_name), Menu::StringToChar(lobby_players[i].player_name));
-					Log::Msg(Menu::StringToChar(lobby_players[i].player_name));
-				}
-					
+				if (lobby_players[i].player_name != "**INVALID**") 
+					Menu::MenuOption(lobby_players[i].player_name, lobby_players[i].player_name);
 			}
-
-
 		}
 
 		/*online players menu*/
 		for (int i = 0; i < 32; i++) {
-			if (Menu::currentMenu(Menu::StringToChar(lobby_players[i].player_name))) {
-				Menu::Title(Menu::StringToChar(lobby_players[i].player_name));
+			if (Menu::currentMenu(lobby_players[i].player_name)) {
+				Menu::Title(lobby_players[i].player_name);
+
+				player_data *current_player = &lobby_players[i];
 
 				Menu::Option("Explode player");
 				Menu::Option("Burn player");
-				Menu::Option("Give player all weapons");
+				if (Menu::Option("Give player all weapons"))
+					Features::give_weap(current_player->player_ped);
 				Menu::Option("Remove player all weapons");
 
-				Menu::MenuOption("Money drop", Menu::StringToChar(lobby_players[i].player_name + "money_drop"));
-				Menu::MenuOption("Teleportation", Menu::StringToChar(lobby_players[i].player_name + "teleportation"));
-				Menu::MenuOption("Vehicle", Menu::StringToChar(lobby_players[i].player_name + "vehicle"));
+				Menu::MenuOption("Money drop", Menu::StringToChar(lobby_players[i].player_name + (std::string)"money_drop"));
+				Menu::MenuOption("Teleportation", Menu::StringToChar(lobby_players[i].player_name + (std::string)"teleportation"));
+				Menu::MenuOption("Vehicle", Menu::StringToChar(lobby_players[i].player_name + (std::string)"vehicle"));
 
 			}
 		}
 
 		/*online players menu money drop*/
 		for (int i = 0; i < 32; i++) {
-			if (Menu::currentMenu(Menu::StringToChar(lobby_players[i].player_name + "money_drop"))) {
-				Menu::Title(Menu::StringToChar(lobby_players[i].player_name + "money_drop"));
+			if (Menu::currentMenu(Menu::StringToChar(lobby_players[i].player_name + (std::string)"money_drop"))) {
+				Menu::Title(Menu::StringToChar(lobby_players[i].player_name + (std::string)" money_drop"));
 				
-				Menu::MenuOption("Auto money", Menu::StringToChar(lobby_players[i].player_name + "auto_money"));
-				Menu::MenuOption("Money bag drop", Menu::StringToChar(lobby_players[i].player_name + "money_bag_drop"));
+				Menu::MenuOption("Auto money", Menu::StringToChar(lobby_players[i].player_name + (std::string)"auto_money"));
+				Menu::MenuOption("Money bag drop", Menu::StringToChar(lobby_players[i].player_name + (std::string)"money_bag_drop"));
 			}
 		}
 
 		/*online players auto money*/
 		for (int i = 0; i < 32; i++) {
-			if (Menu::currentMenu(Menu::StringToChar(lobby_players[i].player_name + "auto_money"))) {
-				Menu::Title(Menu::StringToChar(lobby_players[i].player_name + "Auto money"));
+			if (Menu::currentMenu(Menu::StringToChar(lobby_players[i].player_name + (std::string)"auto_money"))) {
+				Menu::Title(Menu::StringToChar(lobby_players[i].player_name + (std::string)" Auto money"));
 
 				player_data *current_player = &lobby_players[i];
 
@@ -555,8 +556,8 @@ void OriginMenu()
 
 		/*online player money bag drop*/
 		for (int i = 0; i < 32; i++) {
-			if (Menu::currentMenu(Menu::StringToChar(lobby_players[i].player_name + "money_bag_drop"))) {
-				Menu::Title(Menu::StringToChar(lobby_players[i].player_name + "Money bag drop"));
+			if (Menu::currentMenu(Menu::StringToChar(lobby_players[i].player_name + (std::string)"money_bag_drop"))) {
+				Menu::Title(Menu::StringToChar(lobby_players[i].player_name + (std::string)" Money bag drop"));
 
 				player_data *current_player = &lobby_players[i];
 
@@ -710,13 +711,20 @@ void OriginMenu()
 				int frontBumperIndex, frontBumper = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 1);
 				if (frontBumper > 0)
 					if (Menu::IntOption("Front bumper", &frontBumperIndex, 0, frontBumper))
-						Features::apply_vehicle_mod(veh, 0, frontBumperIndex);
+						Features::apply_vehicle_mod(veh, 1, frontBumperIndex);
 
 				int rearBumperIndex, rearBumper = VEHICLE::GET_NUM_VEHICLE_MODS(veh, 2);
 				if (rearBumper> 0)
 					if (Menu::IntOption("Rear bumper", &rearBumperIndex, 0, rearBumper))
-						Features::apply_vehicle_mod(veh, 0, rearBumperIndex);
+						Features::apply_vehicle_mod(veh, 2, rearBumperIndex);
 				
+				for (int i = 3; i < 16; i++) {
+					int numOfMod = VEHICLE::GET_NUM_VEHICLE_MODS(veh, i);
+					char* name = VEHICLE::GET_MOD_SLOT_NAME(veh, i);
+					if (rearBumper> 0)
+						if (Menu::IntOption(name, &modindex[i], 0, numOfMod))
+							Features::apply_vehicle_mod(veh, i, modindex[i]);
+				}
 
 			}
 			else
@@ -938,7 +946,7 @@ void updateFeatures() {
 
 	for (int i = 0; i < 32; i++) {
 		player_data *current_player = &lobby_players[i];
-		if (current_player->player_name.compare("~HUD_COLOUR_RED~**INVALID**") != 0) {
+		if (current_player->player_name != "**INVALID**") {
 			process_remote_money_features(current_player);
 		}
 	}
